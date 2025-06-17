@@ -4,10 +4,18 @@ from docx import Document
 
 def extract_invoice_data(file):
     df = pd.read_excel(file, engine='xlrd')
-    client = df[df.iloc[:, 0].str.contains("Nom du client", na=False)].iloc[0, 1]
-    contract = df[df.iloc[:, 0].str.contains("# Contrat", na=False)].iloc[0, 1]
-    tec_balance = df[df.iloc[:, 0].str.contains("Solde TEC net", na=False)].iloc[0, 1]
-    last_invoice_index = df[df.iloc[:, 4].str.contains("Facture standard", na=False)].index[-1]
+    
+    client_row = df[df.iloc[:, 0].astype(str).str.contains("Nom du client", na=False)]
+    client = client_row.iloc[0, 1] if not client_row.empty else "Non trouvé"
+    
+    contract_row = df[df.iloc[:, 0].astype(str).str.contains("# Contrat", na=False)]
+    contract = contract_row.iloc[0, 1] if not contract_row.empty else "Non trouvé"
+    
+    tec_row = df[df.iloc[:, 0].astype(str).str.contains("Solde TEC net", na=False)]
+    tec_balance = tec_row.iloc[0, 1] if not tec_row.empty else "Non trouvé"
+    
+    last_invoice_index = df[df.iloc[:, 4].astype(str).str.contains("Facture standard", na=False)].index[-1]
+    
     descriptions = []
     total_fees = 0
     for i in range(last_invoice_index + 1, len(df)):
@@ -15,8 +23,10 @@ def extract_invoice_data(file):
             break
         descriptions.append(str(df.iloc[i, 9]))
         total_fees += df.iloc[i, 14]
+    
     descriptions = list(set(descriptions))
     descriptions = [desc.lower().capitalize() for desc in descriptions]
+    
     return client, contract, tec_balance, descriptions, total_fees
 
 def generate_invoice(client, contract, tec_balance, descriptions, total_fees):
